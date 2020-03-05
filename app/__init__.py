@@ -1,6 +1,7 @@
 import os 
 from flask import Flask 
 
+
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     
@@ -19,12 +20,11 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    @app.route('/hello')
-    def index():
-        return 'Pacs n Pull' 
-
     from . import db 
     db.init_app(app)
+
+    from . import dicomconnect
+    app.register_blueprint(dicomconnect.bp)
 
     return app 
 

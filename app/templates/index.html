@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Index{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <h1>Welcome to PACS n PULL</h1>
+    <a href="{{ url_for('dicomconnect.new') }}">New</a>
+    <a href="{{ url_for('dicomconnect.load') }}">Load</a>
+{% endblock %}

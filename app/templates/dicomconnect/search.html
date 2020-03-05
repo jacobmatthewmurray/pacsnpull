@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Config{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <form method="post">
+        {{ form.hidden_tag() }}
+        {% for field in form if field.name != 'csrf_token' %}
+            <div>
+                {{ field.label() }}
+                {{ field() }}
+                {% for error in field.errors %}
+                    <div class="error">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </form>
+    <table>
+        {% if basic_search %}
+        <tr>
+            {% for key in basic_search[0].keys() %}
+                <th>{{ key }}</th>
+            {% endfor %}
+        </tr>
+        {% endif %}
+        {% for row in basic_search %}
+        <tr>
+            {% for val in row %}
+                <td>{{ val }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
