@@ -1,173 +1,164 @@
+import os
 import json
+import io
+import subprocess
+from datetime import datetime
 from flask import (
-        Blueprint, flash, g, redirect, render_template, request, session, url_for, jsonify
+        Blueprint, flash, g, redirect, render_template, request, session, url_for, jsonify, render_template_string,
+current_app
         )
 
-from app.db import get_db
 from app.dicomconnector import Mover
-from app.forms import NewPNPForm, ConfigurationForm, BasicStudySearchForm
+from app.forms import ConfigurationForm
 
 bp = Blueprint('dicomconnect', __name__, url_prefix='/dicomconnect')
 
+global current_query_count
 
-@bp.route('/new', methods=['GET', 'POST'])
-def new_pnp():
-    form = NewPNPForm()
+
+@bp.route('/overview', methods=['GET'])
+def overview():
+    config_form = ConfigurationForm()
+
+    if 'configuration' not in session:
+        session['configuration'] = {}
+    if 'query_preview' not in session:
+        session['query_preview'] = {}
+
+    configuration = session['configuration']
+    query_preview = session['query_preview']
+
+
+    return render_template('/dicomconnect/overview.html', config_form=config_form, configuration=configuration,
+                           query_preview=query_preview)
+
+
+@bp.route('/_query', methods=['GET', 'POST'])
+def _query():
+
     if request.method == 'POST':
-        pnp_title = request.form['title']
-        db = get_db()
-        error = None
+        file = request.files['file']
+        data = json.load(io.BytesIO(file.stream.read()))
 
-        if not pnp_title:
-            error = 'Project name is required.'
-        elif db.execute(
-            'SELECT pnp_id FROM pnp WHERE title = ?', (pnp_title,)
-        ).fetchone() is not None:
-            error = 'Project {} already exists.'.format(pnp_title)
-        if error is None:
+        with open(os.path.join(current_app.config['UPLOAD_PATH'], file.filename), 'w') as json_file:
+            json.dump(data, json_file)
 
-            db.execute(
-                'INSERT INTO pnp (title) VALUES (?)', (pnp_title,)
-            )
-            db.commit()
+        session['current_query_file'] = file.filename
 
-            pnp_id = db.execute(
-                'SELECT pnp_id FROM pnp WHERE title = ?', (pnp_title,)
-            ).fetchone()['pnp_id']
-            session['pnp_id'] = pnp_id
+        return jsonify(data)
 
-            return redirect(url_for('dicomconnect.new_config'))
+    elif request.method == 'GET':
 
-        flash(error)
-
-    return render_template('dicomconnect/new.html', form=form)
-
-
-@bp.route('/config', methods=['GET', 'POST'])
-def new_config():
-    form = ConfigurationForm()
-    if form.validate_on_submit():
-
-        fields = ('pnp_id',)
-        values = (session['pnp_id'],)
-        question_marks = ('?',)
-
-        for field, value in form.data.items():
-            if field not in ['submit', 'csrf_token']:
-                fields += (field,)
-                values += (value,)
-                question_marks += ('?',)
-
-        db = get_db()
-
-        db.execute(
-            'INSERT INTO configuration ('+','.join(fields)+') VALUES ('+','.join(question_marks)+')', values
-        )
-        db.commit()
-
-        return redirect(url_for('dicomconnect.search'))
-
-    return render_template('dicomconnect/config.html', form=form)
-
-
-@bp.route('/search', methods=['GET', 'POST'])
-def search():
-    form = BasicStudySearchForm()
-    db = get_db()
-
-    if form.validate_on_submit():
-
-        fields = ('pnp_id',)
-        values = (session['pnp_id'],)
-        question_marks = ('?',)
-
-        for field, value in form.data.items():
-            if field not in ['submit', 'csrf_token']:
-                fields += (field,)
-                values += (value,)
-                question_marks += ('?',)
-
-        db.execute(
-            'INSERT INTO basic_study_search (' + ','.join(fields) + ') VALUES (' + ','.join(question_marks) + ')', values
-        )
-        db.commit()
-
-    basic_search = db.execute('SELECT * FROM basic_study_search ORDER BY patient_name').fetchall()
-
-    return render_template('dicomconnect/search.html', form=form, basic_search=basic_search)
-
-
-def pacsify_variable(variable):
-
-    pacs_variable = ''.join([x.capitalize() for x in variable.split('_')])
-    pacs_variable = pacs_variable.replace('Id', 'ID').replace('Uid', 'UID')
-
-    return pacs_variable
-
-
-def depacsify_variable(pacs_variable):
-    final = ''
-    variable = pacs_variable.replace('UID', 'Uid').replace('ID', 'Id')
-    for i, v in enumerate(variable):
-        if v.isupper():
-            if i != 0:
-                final += '_'
-            final += v.lower()
+        if 'current_query_file' not in session:
+            return jsonify({})
         else:
-            final += v
-    return final
+            with open(os.path.join(current_app.config['UPLOAD_PATH'], session['current_query_file'])) as json_file:
+                queries = json.load(json_file)
+            return jsonify(queries)
+
+    return None
+
+@bp.route('/update_configuration', methods=['POST', 'GET'])
+def update_configuration():
+
+    session['configuration'] = {
+        'host_ip': request.form['host_ip'],
+        'host_port': int(request.form['host_port']),
+        'client_name': request.form['client_name'],
+        'client_ip': request.form['client_ip'],
+        'client_port': int(request.form['client_port']),
+        'dcm_storage_path': request.form['dcm_storage_path'],
+        'log_storage_path': request.form['log_storage_path'],
+        'query_model': request.form['query_model'],
+        'query_break_count': int(request.form['query_break_count'])
+    }
+    configuration = session['configuration']
+    return render_template('/dicomconnect/configuration_table.html', configuration=configuration)
+
+
+@bp.route('/_save_json', methods=['POST'])
+def _save_json():
+    if 'filename' not in request.headers:
+        return 'error: no filename provided'
+
+    filename = request.headers['filename']
+
+    with open(os.path.join(current_app.config['UPLOAD_PATH'], filename + '.json'), 'w') as json_file:
+        json.dump(request.json, json_file)
+
+    return 'success: json file saved'
+
+
+@bp.route('/_echo', methods=['GET'])
+def _echo():
+    connector = Mover(session['configuration'])
+    response = connector.send_c_echo()
+    return 'Status Code: {}, Status Category: {}'.format(response['status']['code'], response['status']['category'])
 
 
 @bp.route('/find', methods=['GET'])
 def find():
-    db = get_db()
-    configuration = db.execute('SELECT * FROM configuration WHERE pnp_id = ?', (session['pnp_id'],)).fetchone()
-    searches = db.execute('SELECT * FROM basic_study_search').fetchall()
-
-    for search in searches:
-        connector = Mover(configuration)
-        qry = dict()
-        for key, val in search:
-            if key not in ['basic_study_search_id', 'pnp_id']:
-                pacs_key = pacsify_variable(key)
-                qry[pacs_key] = val
-
-        responses = connector.send_c_find(qry)
+    return render_template('/dicomconnect/find.html')
 
 
+@bp.route('/_find', methods=['POST'])
+def _find():
+    assert 'configuration' in session
+    qry = request.get_json()
+    connector = Mover(session['configuration'])
+    responses_dict = connector.send_c_find(qry)
+    connector.assoc.release()
+    return jsonify(responses_dict)
 
 
+@bp.route('/_move', methods=['POST'])
+def _move():
+    assert 'configuration' in session
+    qry = request.get_json()
+    connector = Mover(session['configuration'])
+    responses_dict = connector.send_c_move(qry)
+    connector.assoc.release()
+    return jsonify(responses_dict)
 
 
+@bp.route('/move', methods=['GET'])
+def move():
+    return render_template('/dicomconnect/move.html')
 
-def dcm_find():
 
-    # These elements will come from configuration files and from query file
+@bp.route('/_store', methods=['GET'])
+def _store():
+    if 'storage_running' not in session:
+        session['storage_running'] = False
 
-    configuration = {
-        "network": {
-            'host_ip': '127.0.0.1',
-            'host_port': 4242,
-            'client_name': 'localStore',
-            'client_ip': '',
-            'client_port': 2000,
-        },
-        "storage_path": {
-            "dcm": "",
-            "logs": ""
-        },
-        "query_model": 'S',
-        "query_break_count": 10
-    }
+    store_status = ''
 
-    qry = {
-        'QueryRetrieveLevel': 'SERIES',
-        'StudyInstanceUID': '*',
-        'PatientName': '1579bb13abec8e5492249dd317f1a93d41b8ce084860cdbed5a394fd',
-        'SeriesInstanceUID': '*'
-    }
+    if session['storage_running']:
+        stop_store = 'kill $(pidof storescp | awk "{print $1}")'
+        subprocess.Popen(stop_store, shell=True)
+        store_status = 'store off'
 
-    connector = Mover(configuration)
-    find_response = connector.send_c_find(qry)
+    else:
+        configuration = session['configuration']['dcm_storage_path']
+        client_port = str(session['configuration']['client_port'])
+        start_store = 'storescp -su "" -od "' + configuration + '" ' + client_port
+        subprocess.Popen(start_store, shell=True)
+        store_status = 'store on'
 
-    return jsonify(find_response)
+    session['storage_running'] = not session['storage_running']
+
+    return store_status
+
+
+@bp.route('/_store_stream', methods=['GET'])
+def _store_stream():
+    if 'storage_running' not in session:
+        session['storage_running'] = False
+
+    if session['storage_running']:
+        # return stream from store process here
+        pass
+    else:
+        return jsonify({})
+
+

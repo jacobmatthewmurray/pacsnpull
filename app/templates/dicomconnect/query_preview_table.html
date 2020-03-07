@@ -1,0 +1,19 @@
+{% if query_preview %}
+    <p>Total number of queries: {{ query_preview | length }}</p>
+    <table>
+        <tr>
+            {% for key in query_preview | first %}
+                <th>{{ key }}</th>
+            {% endfor %}
+        </tr>
+        {% for row in query_preview %}
+            <tr>
+            {% for key, value in row.items() %}
+                <td>{{ value }}</td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <h1>No query file has been uploaded yet.</h1>
+{% endif %}

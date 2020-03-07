@@ -1,3 +1,4 @@
+import subprocess
 from pydicom.dataset import Dataset
 from pynetdicom.status import code_to_category
 
@@ -17,6 +18,10 @@ class Mover(object):
         # Initialize the server configuration for the DC Mover
 
         self.client_name = config['client_name']
+        self.client_port = config['client_port']
+
+        self.dcm_storage_path = config['dcm_storage_path']
+
         self.host_ip = config['host_ip']
         self.host_port = config['host_port']
 
@@ -89,21 +94,25 @@ class Mover(object):
 
     def send_c_move(self, qry_dict):
 
+        start_store_cmd = 'storescp -su "" -od "' + self.dcm_storage_path + '" ' + str(self.client_port)
+        stop_store_cmd = 'kill $(pidof storescp | awk "{print $1}")'
+
         qry_ds = self.make_qry_ds(qry_dict)
-
-        qry_response = {
-            'status_final': 'STATUS NEVER SET',
-            'status_list': list()
-        }
-
+        qry_response = {'status': list(), 'data': list()}
         responses = self.assoc.send_c_move(qry_ds, self.client_name, query_model=self.query_model)
 
         cnt = 0
 
         for status, ds in responses:
-            print(status)
-            qry_response['status_final'] = code_to_category(status.Status)
-            qry_response['status_list'].append(self.dictify(status))
+
+            status_dict = self.dictify(status)
+            status_dict['status_category'] = code_to_category(status.Status)
+            qry_response['status'].append(status_dict)
+
+            if ds:
+                data_dict = self.dictify(ds)
+                qry_response['data'].append(data_dict)
+
 
             # if cnt == self.mv_brk_cnt - 1:
             #     if sum(i['NumberOfCompletedSuboperations'] for i in qry_response['status_list']) == 0:
@@ -141,40 +150,37 @@ class Mover(object):
 
 if __name__ == '__main__':
     configuration = {
-        "network": {
             'host_ip': '127.0.0.1',
             'host_port': 4242,
             'client_name': 'STORESCP',
             'client_ip': '',
             'client_port': 2000,
-        },
-        "storage_path": {
-            "dcm": "",
-            "logs": ""
-        },
-        "query_model": 'S',
-        "query_break_count": 10
+            "query_model": 'S',
+            "query_break_count": 10
     }
 
     qry = {
         'QueryRetrieveLevel': 'STUDY',
-        'StudyInstanceUID': '*',
-        'PatientName': '*',
-        'SeriesDescription': '*',
-        'StudyDescription': '*',
-        'StudyDate': '20140601-',
-        'Modality': '*',
-        'StudyID': '*',
-        'AccessionNumber': '*',
-        'PatientBirthDate': '*'
-        # 'SeriesInstanceUID': '1.3.12.2.1107.5.1.4.73104.30000016020906453344500000178'
+        'StudyInstanceUID': '1.2.840.113619.6.95.31.0.3.4.1.6013.13.6073688'
+        # 'PatientName': '7ec8709f2db4e39ea050caf734b6a102ef2280d664d9139c565cefeb'
+        # 'SeriesDescription': '*',
+        # 'StudyDescription': '*',
+        # 'StudyDate': '20140601-',
+        # 'Modality': '*',
+        # 'StudyID': '*',
+        # 'AccessionNumber': '*',
+        # 'PatientBirthDate': '*'
     }
 
-    # m = Mover(configuration)
-    # # m.send_c_echo()
-    # a = m.send_c_move(qry)
-    # m.assoc.release()
-
     m = Mover(configuration)
-    a = m.send_c_find(qry)
-    print(a)
+    a = m.send_c_move(qry)
+    m.assoc.release()
+
+    # m = Mover(configuration)
+    # m.send_c_echo()
+
+    # m = Mover(configuration)
+    # a = m.send_c_find(qry)
+    # print(a)
+
+

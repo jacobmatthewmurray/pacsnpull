@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Move{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <div>
+        <a href="{{ url_for('dicomconnect.overview') }}">Back to Overview</a>
+        <button id="move_button">Move</button>
+        <progress id="query_progress" value="0" max="{{ query_count }}"></progress>
+    </div>
+    <div>
+    <button id="store_button">Store switch</button> <p id="store_status"></p>
+    </div>
+
+    <p>Move Results:</p>
+    <div id="move_results">
+    <div id="query_results_table"></div>
+    <div id="query_status_table"></div>
+    </div>
+{% endblock %}

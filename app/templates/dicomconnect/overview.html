@@ -1,10 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-</body>
-</html>
+{% block header %}
+  <h1>{% block title %}Config{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <div>
+    <form method="post" id="config_form">
+        {{ config_form.hidden_tag() }}
+        {% for field in config_form if field.name != 'csrf_token' %}
+            <div>
+                {{ field.label() }}
+                {{ field() }}
+                {% for error in field.errors %}
+                    <div class="error">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </form>
+    </div>
+
+    <div id="configuration">
+        {% include "/dicomconnect/configuration_table.html" %}
+    </div>
+
+    <div id="query_upload">
+        <form method="post" id="upload_form" enctype="multipart/form-data">
+        <dl>
+            <p>
+                <input type="file" name="file" autocomplete="off" required>
+            </p>
+        </dl>
+        <p>
+            <input type="submit" value="Submit">
+        </p>
+        </form>
+    </div>
+
+    <div>
+    <h1>Preview of first 5 queries.</h1>
+    <div id="query_preview">
+        this
+    </div>
+    </div>
+
+
+
+    <div>
+        <a href="{{ url_for('dicomconnect.move') }}">Move</a>
+        <a href="{{ url_for('dicomconnect.find') }}">Find</a>
+        <a id="echo_button" href="#">Echo</a>
+    </div>
+
+{% endblock %}
