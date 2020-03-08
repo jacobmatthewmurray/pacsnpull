@@ -1,5 +1,5 @@
 import os 
-from flask import Flask, session
+from flask import Flask, render_template
 
 
 def create_app(test_config=None):
@@ -13,6 +13,10 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    @app.route('/', methods=['GET'])
+    def index():
+        return render_template('/index.html')
 
     from . import dicomconnect
     app.register_blueprint(dicomconnect.bp)

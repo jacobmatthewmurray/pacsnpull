@@ -2,19 +2,27 @@ $(document).ready(function(){
 
     let query_results = {};
 
-    $("button").click(function () {
-        $.getJSON("/dicomconnect/find", function (data) {
-            alert(data.data[0].PatientName);
-        });
-    });
-
     $('#config_form').on('submit',function (e) {
         $.ajax({
             type: 'post',
-            url: '/dicomconnect/update_configuration',
+            url: '/dicomconnect/_configuration',
             data: $('#config_form').serialize(),
             success: function (q) {
-                document.getElementById("configuration").innerHTML= q;
+                let html_string = '<table>';
+                $("#config_form label").each(function(idx, val) {
+                    console.log(idx, val, $(val).attr("for"));
+                    if ($(val).attr("for") in q) {
+                        let my_value = '(value not set)';
+                        if (q[$(val).attr("for")] != ''){
+                            my_value = q[$(val).attr("for")]
+                        }
+                        html_string += '<tr><td>' + my_value + ' </td></tr>';
+                    } else {
+                        html_string += '<tr><td> </td></tr>';
+                    }
+                })
+                html_string += '</table>';
+                $('#config_form_results_table').html(html_string);
             }});
         e.preventDefault();
      });
@@ -30,7 +38,11 @@ $(document).ready(function(){
             contentType: false, // NEEDED, DON'T OMIT THIS (requires jQuery 1.6+)
             processData: false, // NEEDED, DON'T OMIT THIS
             success: function (q) {
-                document.getElementById("query_preview").innerHTML= make_row_header_table(q);
+                $("#query_preview").empty();
+                $.each(q, function (key, val) {
+                    tabulate(val, "#query_preview");
+                })
+                // document.getElementById("query_preview").innerHTML= make_row_header_table(q);
             }
         });
         e.preventDefault();
@@ -79,9 +91,23 @@ $(document).ready(function(){
         });
     });
 
-    $.getJSON('/dicomconnect/_query', function (data) {
-            $('#query_preview').html(make_row_header_table(data))
+    $(".overview-item-header").click(function () {
+
+        $header = $(this);
+        //getting the next element
+        $content = $header.next();
+        //open up the content needed - toggle the slide- if visible, slide up, if not slidedown.
+        $content.slideToggle(500, function () {
+            //execute this after slideToggle is done
+            //change text of header based on visibility of content div
+            $header.text(function () {
+                //change text based on condition
+                return $content.is(":visible") ? "Collapse" : "Expand";
+            });
     });
+
+});
+
 
 });
 
@@ -135,32 +161,39 @@ function run_query(query_type){
             })
         }
     })
-    return query_results
+    return query_results;
 };
 
 
 function tabulate(single_dict, output_location){
-    if ($(output_location).has('table').length == 0 ) {
-        let html_string = '<table><thead><tr>';
+    if ($(output_location).has('table').length == 0) {
+        let header_row = '';
+        let first_row = '';
         $.each(single_dict, function (key, val) {
-            html_string += '<th>'+ key +'</th>';
+            header_row += '<th>'+ key +'</th>';
+            first_row += '<td>'+ val +'</td>';
         });
-        html_string += '</tr></thead><tbody></tbody></table>';
+        let html_string = '<table><thead><tr>' + header_row + '</tr></thead><tbody><tr>' + first_row + '</tr></tbody></table>';
         $(output_location).html(html_string)
+    } else {
+        let html_string = '<tr>';
+        $(output_location + " table thead tr th").each(function (idx, val) {
+            if (val.innerHTML in single_dict){
+                console.log(val);
+                html_string += '<td>'+ single_dict[val.innerHTML] +'</td>';
+            } else {
+                html_string += '<td></td>';
+            }
+        // could check here that no new fields are added, compare two lists
+        });
+        html_string += '</tr>';
+        $(output_location + " table tbody tr:last").after(html_string);
+
     }
 
-    let html_string = '<tr>';
-    $(output_location + " table thead tr th").each(function (idx, val) {
-        if (val.innerHTML in single_dict){
-            html_string += '<td>'+ single_dict[val.innerHTML] +'</td>';
-        } else {
-            html_string += '<td></td>';
-        }
-        // could check here that no new fields are added, compare two lists
-    });
-    html_string += '</tr>';
-    $(output_location + " table thead tr:last").after(html_string);
 }
+
+
 
 
 function make_table_header_row(single_dict) {

@@ -13,4 +13,4 @@ class ConfigurationForm(FlaskForm):
     log_storage_path = StringField('Log Storage Path', default='/home/jacob/storedir/')
     query_model = StringField('Query Model', default='S')
     query_break_count = IntegerField('Query Break Count', default=10)
-    submit = SubmitField('Create')
+    submit = SubmitField('Submit')

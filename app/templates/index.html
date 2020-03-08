@@ -5,7 +5,86 @@
 {% endblock %}
 
 {% block content %}
-    <h1>Welcome to PACS n PULL</h1>
-    <a href="{{ url_for('dicomconnect.new') }}">New</a>
-    <a href="{{ url_for('dicomconnect.load') }}">Load</a>
+        <div class="index-container">
+            <div class="main-tag-item">
+                <p>pacs n pull</p>
+            </div>
+            <div class="link-button-item">
+                <div class="link-button"  id="documentation_button">docs</div>
+                <div class="link-button" id="pacsnpull_button"><a href="#transition-target">go</a></div>
+            </div>
+            <div  class="footer-item">
+                about
+            </div>
+        </div>
+{#        <div id="overview-container">#}
+{#    <div id="overview-header">#}
+{#        <a href="#something">WAY BACK</a>#}
+{#    </div>#}
+{#    <div class="overview-item" id="overview-configuration">#}
+{#        <div class="overview-item-header"><span>Expand</span></div>#}
+{#        <div class="overview-item-body">#}
+{#            <div class="overview-item-controls-configuration">#}
+{#                <div class="overview-item-controls-configuration-item">#}
+{#                    <div class="overview-item-controls-heading">Set configuration values:</div>#}
+{#                    <form method="post" id="config_form">#}
+{#                    {{ config_form.hidden_tag() }}#}
+{#                    {% for field in config_form if field.name != 'csrf_token' %}#}
+{#                        <div>#}
+{#                            {{ field.label() }}#}
+{#                            {{ field() }}#}
+{#                            {% for error in field.errors %}#}
+{#                                <div class="error">{{ error }}</div>#}
+{#                            {% endfor %}#}
+{#                        </div>#}
+{#                    {% endfor %}#}
+{#                    </form>#}
+{#                </div>#}
+{#                <div class="overview-item-controls-configuration-item">#}
+{#                    <div class="overview-item-controls-heading">Current configuration values:</div>#}
+{#                    <div id="config_form_results_table"></div>#}
+{#                </div>#}
+{##}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
+{#    <div class="overview-item" id="overview-query">#}
+{#        <div class="overview-item-header"><span>Expand</span></div>#}
+{#        <div class="overview-item-body">#}
+{#            <div class="overview-item-controls-heading">Upload query:</div>#}
+{#            <div class="overview-item-controls">#}
+{#                <form method="post" id="upload_form" enctype="multipart/form-data">#}
+{#                    <input type="file" name="file" autocomplete="off" required> <input type="submit" value="Submit">#}
+{#                </form>#}
+{#            </div>#}
+{#            <div class="overview-item-controls-heading">Currently loaded query:</div>#}
+{#            <div class="overview-item-results">#}
+{#                <div id="query_preview"></div>#}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
+{#    <div class="overview-item" id="overview-find">#}
+{#        <div class="overview-item-header"><span>Expand</span></div>#}
+{#        <div class="overview-item-body">#}
+{#            <ul>#}
+{#            <li>This is just some random content.</li>#}
+{#            <li>This is just some random content.</li>#}
+{#            <li>This is just some random content.</li>#}
+{#            <li>This is just some random content.</li>#}
+{#            </ul>#}
+{#        </div>#}
+{#    </div>#}
+{#    <div class="overview-item" id="overview-move">#}
+{#        <div class="overview-item-header"><span>Expand</span></div>#}
+{#        <div class="overview-item-body">#}
+{#            <ul>#}
+{#            <li>This is just some random content.</li>#}
+{#            <li>This is just some random content.</li>#}
+{#            <li>This is just some random content.</li>#}
+{#            <li>This is just some random content.</li>#}
+{#            </ul>#}
+{#        </div>#}
+{#    </div>#}
+{#    <div id="overview-footer"></div>#}
+{#</div>#}
 {% endblock %}

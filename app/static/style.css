@@ -1,0 +1,152 @@
+html {
+    height: 100%;
+    font-family: Gothic;
+}
+
+body {
+    background-color: #4f84ff;
+    height: 100%;
+    margin: 0;
+}
+
+.content {
+    height: 100%;
+    border: thin solid red;
+}
+
+.index-container {
+    display: flex;
+    height: 100%; 
+    display: flex;
+    flex-direction: column;
+}
+
+.main-tag-item {
+    display: flex;
+    flex: 20 1 auto;
+    border: thin solid red;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-tag-item p {
+    color: white; 
+    font-family: Gothic;
+    font-size: 1200%;
+    transform: scale(2, 3);
+    -webkit-transform: scale(2, 3); /* Safari and Chrome */
+    -moz-transform: scale(2, 3); /* Firefox */
+    -ms-transform: scale(2, 3); /* IE 9+ */
+    -o-transform: scale(2, 3); /* Opera */
+}
+
+.link-button-item {
+    display: flex;
+    flex: 20 1 auto;
+    border: thin solid red;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-item {
+    color: white; 
+    display: flex;
+    flex: 2 1 auto;
+    border: thin solid red;
+    justify-content: center;
+    align-items: center;
+}
+
+.link-button{
+    font-size: 50px;
+    width: 150px;
+    height: 150px;
+    background-color: #4a00ff;
+    color: white; 
+    margin: 1%; 
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+
+#overview-container{
+    padding: 40px;
+}
+
+.overview-item {
+    margin-bottom: 20px;
+    box-shadow: 4px 5px grey;
+}
+
+.overview-item .overview-item-header {
+    border: thin solid white;
+    height: 50px; 
+    background-color: #4a00ff;
+}
+
+.overview-item .overview-item-body {
+    display: none; 
+    border: thin solid white;
+    padding: 20px;
+/*     max-height: 200px; */
+}
+
+
+#config_form label {
+    display: inline-block;
+    width: 200px;
+}
+
+.overview-item-controls-configuration {
+    display: flex;
+    padding: 20px;
+}
+
+.overview-item-controls-configuration-item {
+    padding-right: 40px;
+}
+
+.overview-item-controls-heading {
+    font-weight: bold; 
+    padding-bottom: 10px;
+}
+
+.overview-item-controls {
+    padding: 20px;
+}
+
+.overview-item-results table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    border: thin solid black;
+}
+
+.overview-item-results tbody{
+  display:block;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  height: 200px;
+}
+
+.overview-item-results thead tr {
+    display: block;
+    border-bottom: solid black; 
+}
+
+/* thead {
+  background: black;
+  color:#fff;
+} */
+
+.overview-item-results th, .overview-item-results td {
+  padding: 5px;
+  text-align: left;
+  width: 200px;
+/*   border: thin solid black; */
+}
+

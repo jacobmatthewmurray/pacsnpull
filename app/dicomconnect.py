@@ -13,7 +13,10 @@ from app.forms import ConfigurationForm
 
 bp = Blueprint('dicomconnect', __name__, url_prefix='/dicomconnect')
 
-global current_query_count
+
+@bp.route('/', methods=['GET'])
+def index():
+    return render_template('/dicomconnect/index.html')
 
 
 @bp.route('/overview', methods=['GET'])
@@ -58,22 +61,30 @@ def _query():
 
     return None
 
-@bp.route('/update_configuration', methods=['POST', 'GET'])
-def update_configuration():
 
-    session['configuration'] = {
-        'host_ip': request.form['host_ip'],
-        'host_port': int(request.form['host_port']),
-        'client_name': request.form['client_name'],
-        'client_ip': request.form['client_ip'],
-        'client_port': int(request.form['client_port']),
-        'dcm_storage_path': request.form['dcm_storage_path'],
-        'log_storage_path': request.form['log_storage_path'],
-        'query_model': request.form['query_model'],
-        'query_break_count': int(request.form['query_break_count'])
-    }
-    configuration = session['configuration']
-    return render_template('/dicomconnect/configuration_table.html', configuration=configuration)
+@bp.route('/_configuration', methods=['POST', 'GET'])
+def _configuration():
+    if request.method == 'POST':
+        session['configuration'] = {
+            'host_ip': request.form['host_ip'],
+            'host_port': int(request.form['host_port']),
+            'client_name': request.form['client_name'],
+            'client_ip': request.form['client_ip'],
+            'client_port': int(request.form['client_port']),
+            'dcm_storage_path': request.form['dcm_storage_path'],
+            'log_storage_path': request.form['log_storage_path'],
+            'query_model': request.form['query_model'],
+            'query_break_count': int(request.form['query_break_count'])
+        }
+        configuration = session['configuration']
+
+    else:
+        if 'configuration' in session:
+            configuration = session['configuration']
+        else:
+            configuration = {}
+
+    return jsonify(configuration)
 
 
 @bp.route('/_save_json', methods=['POST'])

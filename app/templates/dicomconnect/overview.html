@@ -5,51 +5,104 @@
 {% endblock %}
 
 {% block content %}
-    <div>
-    <form method="post" id="config_form">
-        {{ config_form.hidden_tag() }}
-        {% for field in config_form if field.name != 'csrf_token' %}
-            <div>
-                {{ field.label() }}
-                {{ field() }}
-                {% for error in field.errors %}
-                    <div class="error">{{ error }}</div>
-                {% endfor %}
+<div id="overview-container">
+    <div id="overview-header"></div>
+    <div class="overview-item" id="overview-configuration">
+        <div class="overview-item-header"><span>Expand</span></div>
+        <div class="overview-item-body">
+            <div class="overview-item-controls-configuration">
+                <div class="overview-item-controls-configuration-item">
+                    <div class="overview-item-controls-heading">Set configuration values:</div>
+                    <form method="post" id="config_form">
+                    {{ config_form.hidden_tag() }}
+                    {% for field in config_form if field.name != 'csrf_token' %}
+                        <div>
+                            {{ field.label() }}
+                            {{ field() }}
+                            {% for error in field.errors %}
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    </form>
+                </div>
+                <div class="overview-item-controls-configuration-item">
+                    <div class="overview-item-controls-heading">Current configuration values:</div>
+                    <div id="config_form_results_table"></div>
+                </div>
+
             </div>
-        {% endfor %}
-    </form>
+        </div>
     </div>
-
-    <div id="configuration">
-        {% include "/dicomconnect/configuration_table.html" %}
+    <div class="overview-item" id="overview-query">
+        <div class="overview-item-header"><span>Expand</span></div>
+        <div class="overview-item-body">
+            <div class="overview-item-controls-heading">Upload query:</div>
+            <div class="overview-item-controls">
+                <form method="post" id="upload_form" enctype="multipart/form-data">
+                    <input type="file" name="file" autocomplete="off" required> <input type="submit" value="Submit">
+                </form>
+            </div>
+            <div class="overview-item-controls-heading">Currently loaded query:</div>
+            <div class="overview-item-results">
+                <div id="query_preview"></div>
+            </div>
+        </div>
     </div>
-
-    <div id="query_upload">
-        <form method="post" id="upload_form" enctype="multipart/form-data">
-        <dl>
-            <p>
-                <input type="file" name="file" autocomplete="off" required>
-            </p>
-        </dl>
-        <p>
-            <input type="submit" value="Submit">
-        </p>
-        </form>
+    <div class="overview-item" id="overview-find">
+        <div class="overview-item-header"><span>Expand</span></div>
+        <div class="overview-item-body">
+            <ul>
+            <li>This is just some random content.</li>
+            <li>This is just some random content.</li>
+            <li>This is just some random content.</li>
+            <li>This is just some random content.</li>
+            </ul>
+        </div>
     </div>
-
-    <div>
-    <h1>Preview of first 5 queries.</h1>
-    <div id="query_preview">
-        this
+    <div class="overview-item" id="overview-move">
+        <div class="overview-item-header"><span>Expand</span></div>
+        <div class="overview-item-body">
+            <ul>
+            <li>This is just some random content.</li>
+            <li>This is just some random content.</li>
+            <li>This is just some random content.</li>
+            <li>This is just some random content.</li>
+            </ul>
+        </div>
     </div>
-    </div>
-
-
-
-    <div>
-        <a href="{{ url_for('dicomconnect.move') }}">Move</a>
-        <a href="{{ url_for('dicomconnect.find') }}">Find</a>
-        <a id="echo_button" href="#">Echo</a>
-    </div>
-
+    <div id="overview-footer"></div>
+</div>
 {% endblock %}
+
+
+
+
+{##}
+{#    <div id="query_upload">#}
+{#        <form method="post" id="upload_form" enctype="multipart/form-data">#}
+{#        <dl>#}
+{#            <p>#}
+{#                <input type="file" name="file" autocomplete="off" required>#}
+{#            </p>#}
+{#        </dl>#}
+{#        <p>#}
+{#            <input type="submit" value="Submit">#}
+{#        </p>#}
+{#        </form>#}
+{#    </div>#}
+{##}
+{#    <div>#}
+{#    <h1>Preview of first 5 queries.</h1>#}
+{#    <div id="query_preview">#}
+{#        this#}
+{#    </div>#}
+{#    </div>#}
+{##}
+{##}
+{##}
+{#    <div>#}
+{#        <a href="{{ url_for('dicomconnect.move') }}">Move</a>#}
+{#        <a href="{{ url_for('dicomconnect.find') }}">Find</a>#}
+{#        <a id="echo_button" href="#">Echo</a>#}
+{#    </div>#}
