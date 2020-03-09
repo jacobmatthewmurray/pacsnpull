@@ -253,7 +253,7 @@ a:visited {
 }
 
 progress {
-  color #4f84ff;
+  color: #4f84ff;
   width: 400px;
   height:40px;
   background: white;
@@ -262,9 +262,9 @@ progress {
   margin-right: 40px;
    
 }
-progress::-moz-progress-bar { background: #4f84ff; };
-progress::-webkit-progress-bar { background: #fff; };
-progress::-webkit-progress-value { background: #4f84ff; };
+progress::-moz-progress-bar { background: #4f84ff; }
+progress::-webkit-progress-bar { background: #fff; }
+progress::-webkit-progress-value { background: #4f84ff; }
 
 
 #config_form {}
@@ -290,7 +290,6 @@ input[type=submit], input[type=file] {
 input[type=submit]:hover {
   color: white;
   background-color: #4f84ff;
-
 }
 
 #upload_form input[type=submit] {

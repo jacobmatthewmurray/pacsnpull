@@ -1,0 +1,16 @@
+FROM python:3.7
+
+MAINTAINER jacobmatthewmurray "jacobmatthewmurray@gmail.com"
+
+COPY ./requirements.txt /pacsnpull/requirements.txt
+
+WORKDIR /pacsnpull
+
+RUN pip install -r requirements.txt
+RUN export FLASK_APP=app
+RUN export FLASK_ENV=production
+
+COPY ./app /pacsnpull/app
+
+CMD ["flask", "run", "--host", "0.0.0.0"]
+
