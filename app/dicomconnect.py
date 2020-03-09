@@ -2,6 +2,7 @@ import os
 import json
 import io
 import subprocess
+import datetime
 from datetime import datetime
 from flask import (
         Blueprint, flash, g, redirect, render_template, request, session, url_for, jsonify, render_template_string,
@@ -25,28 +26,31 @@ def overview():
 
     if 'configuration' not in session:
         session['configuration'] = {}
-    if 'query_preview' not in session:
-        session['query_preview'] = {}
-
     configuration = session['configuration']
-    query_preview = session['query_preview']
 
-
-    return render_template('/dicomconnect/overview.html', config_form=config_form, configuration=configuration,
-                           query_preview=query_preview)
+    return render_template('/dicomconnect/overview.html', config_form=config_form, configuration=configuration)
 
 
 @bp.route('/_query', methods=['GET', 'POST'])
 def _query():
 
     if request.method == 'POST':
-        file = request.files['file']
-        data = json.load(io.BytesIO(file.stream.read()))
 
-        with open(os.path.join(current_app.config['UPLOAD_PATH'], file.filename), 'w') as json_file:
+        if 'file' in request.files:
+
+            file = request.files['file']
+            data = json.load(io.BytesIO(file.stream.read()))
+            filename = file.filename
+
+        else:
+
+            data = request.get_json()
+            filename = 'find_2_move_' + str(datetime.now()) + '.json'
+
+        with open(os.path.join(current_app.config['UPLOAD_PATH'], filename), 'w') as json_file:
             json.dump(data, json_file)
 
-        session['current_query_file'] = file.filename
+        session['current_query_file'] = filename
 
         return jsonify(data)
 
@@ -60,6 +64,13 @@ def _query():
             return jsonify(queries)
 
     return None
+
+
+@bp.route('/_set_query_file', methods=['POST'])
+def _set_query_file():
+    assert 'current_query_file' in request.get_json()
+    session['current_query_file'] = request.get_json()['current_query_file']
+    return jsonify({'current_query_file': session['current_query_file']})
 
 
 @bp.route('/_configuration', methods=['POST', 'GET'])
@@ -107,11 +118,6 @@ def _echo():
     return 'Status Code: {}, Status Category: {}'.format(response['status']['code'], response['status']['category'])
 
 
-@bp.route('/find', methods=['GET'])
-def find():
-    return render_template('/dicomconnect/find.html')
-
-
 @bp.route('/_find', methods=['POST'])
 def _find():
     assert 'configuration' in session
@@ -132,33 +138,25 @@ def _move():
     return jsonify(responses_dict)
 
 
-@bp.route('/move', methods=['GET'])
-def move():
-    return render_template('/dicomconnect/move.html')
-
-
 @bp.route('/_store', methods=['GET'])
 def _store():
+
     if 'storage_running' not in session:
         session['storage_running'] = False
-
-    store_status = ''
 
     if session['storage_running']:
         stop_store = 'kill $(pidof storescp | awk "{print $1}")'
         subprocess.Popen(stop_store, shell=True)
-        store_status = 'store off'
+        session['storage_running'] = False
 
     else:
         configuration = session['configuration']['dcm_storage_path']
         client_port = str(session['configuration']['client_port'])
         start_store = 'storescp -su "" -od "' + configuration + '" ' + client_port
         subprocess.Popen(start_store, shell=True)
-        store_status = 'store on'
+        session['storage_running'] = True
 
-    session['storage_running'] = not session['storage_running']
-
-    return store_status
+    return {'store_status': session['storage_running']}
 
 
 @bp.route('/_store_stream', methods=['GET'])
@@ -171,5 +169,16 @@ def _store_stream():
         pass
     else:
         return jsonify({})
+
+
+@bp.route('/_store_status', methods=['GET'])
+def _store_status():
+    storage_status = False
+    if 'storage_running' in session:
+        if session['storage_running']:
+            storage_status = True
+    return {'store_status': storage_status}
+
+
 
 

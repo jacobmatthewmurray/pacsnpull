@@ -1,18 +1,22 @@
 {% extends 'base.html' %}
 
-{% block header %}
-  <h1>{% block title %}Config{% endblock %}</h1>
-{% endblock %}
 
 {% block content %}
 <div id="overview-container">
-    <div id="overview-header"></div>
+    <div id="overview-header">
+        <div class="nav-button"><a href="{{ url_for('index') }}">&larr;</a></div>
+        <div class="tag">pacs n pull</div>
+    </div>
     <div class="overview-item" id="overview-configuration">
-        <div class="overview-item-header"><span>Expand</span></div>
+        <div class="overview-item-header">
+            <div class="expand-symbol">&#43;</div>
+            <div class="overview-item-header-title">configuration</div>
+            <div class="overview-item-header-status-text"></div>
+        </div>
         <div class="overview-item-body">
             <div class="overview-item-controls-configuration">
                 <div class="overview-item-controls-configuration-item">
-                    <div class="overview-item-controls-heading">Set configuration values:</div>
+                    <div class="overview-item-controls-heading">set configuration values:</div>
                     <form method="post" id="config_form">
                     {{ config_form.hidden_tag() }}
                     {% for field in config_form if field.name != 'csrf_token' %}
@@ -27,82 +31,97 @@
                     </form>
                 </div>
                 <div class="overview-item-controls-configuration-item">
-                    <div class="overview-item-controls-heading">Current configuration values:</div>
+                    <div class="overview-item-controls-heading">current configuration values:</div>
                     <div id="config_form_results_table"></div>
                 </div>
-
+                <div class="overview-item-controls-configuration-item">
+                    <div class="overview-item-controls-heading">test network configuration:</div>
+                    <button id="echo_button">echo</button>
+                </div>
             </div>
         </div>
     </div>
     <div class="overview-item" id="overview-query">
-        <div class="overview-item-header"><span>Expand</span></div>
+        <div class="overview-item-header">
+            <div class="expand-symbol">&#43;</div>
+            <div class="overview-item-header-title">query</div>
+            <div class="overview-item-header-status-text"></div>
+        </div>
         <div class="overview-item-body">
-            <div class="overview-item-controls-heading">Upload query:</div>
+            <div class="overview-item-controls-heading">upload query:</div>
             <div class="overview-item-controls">
                 <form method="post" id="upload_form" enctype="multipart/form-data">
                     <input type="file" name="file" autocomplete="off" required> <input type="submit" value="Submit">
                 </form>
             </div>
-            <div class="overview-item-controls-heading">Currently loaded query:</div>
+            <div class="overview-item-controls-heading">currently loaded query:</div>
             <div class="overview-item-results">
-                <div id="query_preview"></div>
+                <div class="tabular-results">
+                    <div id="query_preview"></div>
+                </div>
             </div>
         </div>
     </div>
     <div class="overview-item" id="overview-find">
-        <div class="overview-item-header"><span>Expand</span></div>
+        <div class="overview-item-header">
+            <div class="expand-symbol">&#43;</div>
+            <div class="overview-item-header-title">find</div>
+            <div class="overview-item-header-status-text" ></div>
+        </div>
         <div class="overview-item-body">
-            <ul>
-            <li>This is just some random content.</li>
-            <li>This is just some random content.</li>
-            <li>This is just some random content.</li>
-            <li>This is just some random content.</li>
-            </ul>
+            <div class="overview-item-controls-heading">find controls:</div>
+            <div class="overview-item-controls">
+                <button id="find_button">find</button>
+                <progress id="find_progress" value="0" max=""></progress>
+                <button id="find_download">save</button>
+                <button id="convert_button">convert</button>
+            </div>
+            <div class="overview-item-controls-heading">find results:</div>
+            <div class="overview-item-results">
+                <div class="tabular-results">
+                    <div id="find_data"></div>
+                    <div id="find_status"></div>
+                </div>
+            </div>
         </div>
     </div>
     <div class="overview-item" id="overview-move">
-        <div class="overview-item-header"><span>Expand</span></div>
+        <div class="overview-item-header">
+            <div class="expand-symbol">&#43;</div>
+            <div class="overview-item-header-title">move</div>
+            <div class="overview-item-header-status-text"></div>
+        </div>
         <div class="overview-item-body">
-            <ul>
-            <li>This is just some random content.</li>
-            <li>This is just some random content.</li>
-            <li>This is just some random content.</li>
-            <li>This is just some random content.</li>
-            </ul>
+            <div class="overview-item-controls-heading">move controls:</div>
+            <div class="overview-item-controls">
+                <button id="move_button">Move</button>
+                <progress id="move_progress" value="0" max=""></progress>
+                <button id="move_download">save</button>
+            </div>
+            <div class="overview-item-controls-heading">move results:</div>
+            <div class="overview-item-results">
+                <div class="tabular-results">
+                        <div id="move_data"></div>
+                        <div id="move_status"></div>
+                </div>
+            </div>
         </div>
     </div>
-    <div id="overview-footer"></div>
+    <div class="overview-item" id="overview-store">
+        <div class="overview-item-header">
+            <div class="expand-symbol">&#43;</div>
+            <div class="overview-item-header-title">store</div>
+            <div class="overview-item-header-status-text"></div>
+        </div>
+        <div class="overview-item-body">
+            <div class="overview-item-controls-heading">store controls:</div>
+            <div class="overview-item-controls">
+                <button id="store_button"></button>
+            </div>
+        </div>
+    </div>
+    <div id="overview-footer">
+                questions and comments at jacobmatthewmurray at gmail dot com
+    </div>
 </div>
 {% endblock %}
-
-
-
-
-{##}
-{#    <div id="query_upload">#}
-{#        <form method="post" id="upload_form" enctype="multipart/form-data">#}
-{#        <dl>#}
-{#            <p>#}
-{#                <input type="file" name="file" autocomplete="off" required>#}
-{#            </p>#}
-{#        </dl>#}
-{#        <p>#}
-{#            <input type="submit" value="Submit">#}
-{#        </p>#}
-{#        </form>#}
-{#    </div>#}
-{##}
-{#    <div>#}
-{#    <h1>Preview of first 5 queries.</h1>#}
-{#    <div id="query_preview">#}
-{#        this#}
-{#    </div>#}
-{#    </div>#}
-{##}
-{##}
-{##}
-{#    <div>#}
-{#        <a href="{{ url_for('dicomconnect.move') }}">Move</a>#}
-{#        <a href="{{ url_for('dicomconnect.find') }}">Find</a>#}
-{#        <a id="echo_button" href="#">Echo</a>#}
-{#    </div>#}

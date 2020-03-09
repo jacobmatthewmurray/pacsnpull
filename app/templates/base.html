@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 
 <head>
-    <title>{% block title %}{% endblock %} - PACSnPULL</title>
+    <title>pacs n pull</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="{{url_for('static', filename='jquery.js') }}">\x3C/script>')</script>
     <script type=text/javascript src="{{url_for('static', filename='script.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>

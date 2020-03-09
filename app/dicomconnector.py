@@ -94,9 +94,6 @@ class Mover(object):
 
     def send_c_move(self, qry_dict):
 
-        start_store_cmd = 'storescp -su "" -od "' + self.dcm_storage_path + '" ' + str(self.client_port)
-        stop_store_cmd = 'kill $(pidof storescp | awk "{print $1}")'
-
         qry_ds = self.make_qry_ds(qry_dict)
         qry_response = {'status': list(), 'data': list()}
         responses = self.assoc.send_c_move(qry_ds, self.client_name, query_model=self.query_model)
@@ -120,7 +117,7 @@ class Mover(object):
             #         break
 
             cnt += 1
-
+        print(qry_response['status'])
         return qry_response
 
     def send_c_echo(self):
