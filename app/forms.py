@@ -9,8 +9,6 @@ class ConfigurationForm(FlaskForm):
     client_name = StringField('client name', default='STORESCP')
     client_ip = StringField('client ip')
     client_port = IntegerField('client port', default=2000)
-    dcm_storage_path = StringField('dcm storage path', default='/home/jacob/storedir/')
-    log_storage_path = StringField('log storage path', default='/home/jacob/storedir/')
     query_model = StringField('query model', default='S')
     query_break_count = IntegerField('query break count', default=10)
     submit = SubmitField('submit')

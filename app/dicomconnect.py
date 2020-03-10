@@ -5,8 +5,7 @@ import subprocess
 import datetime
 from datetime import datetime
 from flask import (
-        Blueprint, flash, g, redirect, render_template, request, session, url_for, jsonify, render_template_string,
-current_app
+        Blueprint, flash, g, redirect, render_template, request, session, url_for, jsonify, current_app
         )
 
 from app.dicomconnector import Mover
@@ -47,7 +46,7 @@ def _query():
             data = request.get_json()
             filename = 'find_2_move_' + str(datetime.now()) + '.json'
 
-        with open(os.path.join(current_app.config['UPLOAD_PATH'], filename), 'w') as json_file:
+        with open(os.path.join(current_app.instance_path, 'qry', filename), 'w') as json_file:
             json.dump(data, json_file)
 
         session['current_query_file'] = filename
@@ -59,7 +58,7 @@ def _query():
         if 'current_query_file' not in session:
             return jsonify({})
         else:
-            with open(os.path.join(current_app.config['UPLOAD_PATH'], session['current_query_file'])) as json_file:
+            with open(os.path.join(current_app.instance_path, 'qry', session['current_query_file'])) as json_file:
                 queries = json.load(json_file)
             return jsonify(queries)
 
@@ -82,8 +81,6 @@ def _configuration():
             'client_name': request.form['client_name'],
             'client_ip': request.form['client_ip'],
             'client_port': int(request.form['client_port']),
-            'dcm_storage_path': request.form['dcm_storage_path'],
-            'log_storage_path': request.form['log_storage_path'],
             'query_model': request.form['query_model'],
             'query_break_count': int(request.form['query_break_count'])
         }
@@ -105,7 +102,7 @@ def _save_json():
 
     filename = request.headers['filename']
 
-    with open(os.path.join(current_app.config['UPLOAD_PATH'], filename + '.json'), 'w') as json_file:
+    with open(os.path.join(current_app.instance_path, 'qry', filename + '.json'), 'w') as json_file:
         json.dump(request.json, json_file)
 
     return 'success: json file saved'
@@ -150,14 +147,18 @@ def _store():
         session['storage_running'] = False
 
     else:
-        configuration = session['configuration']['dcm_storage_path']
+        store_path = os.path.join(current_app.instance_path, 'dcm')
         client_port = str(session['configuration']['client_port'])
-        start_store = 'storescp -su "" -od "' + configuration + '" ' + client_port
-        subprocess.Popen(start_store, shell=True)
+        err_log_path = os.path.join(current_app.instance_path, 'log', 'store_err_' + timestamp() + '.log')
+        out_log_path = os.path.join(current_app.instance_path, 'log', 'store_out_' + timestamp() + '.log')
+        start_store = 'storescp -su "" -ll INFO -od "' + store_path + '" ' + client_port
+
+        with open(out_log_path, 'a') as out, open(err_log_path, 'a') as err:
+            subprocess.Popen(start_store, shell=True, stderr=err, stdout=out)
+
         session['storage_running'] = True
 
     return {'store_status': session['storage_running']}
-
 
 @bp.route('/_store_stream', methods=['GET'])
 def _store_stream():
@@ -170,7 +171,6 @@ def _store_stream():
     else:
         return jsonify({})
 
-
 @bp.route('/_store_status', methods=['GET'])
 def _store_status():
     storage_status = False
@@ -180,5 +180,5 @@ def _store_status():
     return {'store_status': storage_status}
 
 
-
-
+def timestamp():
+    return datetime.strftime(datetime.now(), "%Y%m%d%H%M%S")

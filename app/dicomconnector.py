@@ -1,4 +1,4 @@
-import subprocess
+
 from pydicom.dataset import Dataset
 from pynetdicom.status import code_to_category
 
@@ -9,7 +9,6 @@ from pynetdicom.sop_class import (
     StudyRootQueryRetrieveInformationModelMove,
     StudyRootQueryRetrieveInformationModelFind)
 
-
 class Mover(object):
     """docstring for DCMover"""
 
@@ -19,8 +18,6 @@ class Mover(object):
 
         self.client_name = config['client_name']
         self.client_port = config['client_port']
-
-        self.dcm_storage_path = config['dcm_storage_path']
 
         self.host_ip = config['host_ip']
         self.host_port = config['host_port']
@@ -63,7 +60,10 @@ class Mover(object):
             return False
 
     def dictify(self, ds):
+
         """Turn a pydicom Dataset into a dict with keys derived from the Element keywords.
+
+        Source: https://github.com/pydicom/pydicom/issues/319"
 
         Parameters
         ----------
@@ -110,11 +110,12 @@ class Mover(object):
                 data_dict = self.dictify(ds)
                 qry_response['data'].append(data_dict)
 
-
-            # if cnt == self.mv_brk_cnt - 1:
-            #     if sum(i['NumberOfCompletedSuboperations'] for i in qry_response['status_list']) == 0:
-            #         print('ABORTING MOVE: {} STATUSES RECEIVED WITHOUT FILE MOVEMENT'.format(self.mv_brk_cnt))
-            #         break
+            if cnt == self.mv_brk_cnt - 1:
+                if 'NumberOfCompletedSuboperations' in qry_response['status']:
+                    if sum(int(i['NumberOfCompletedSuboperations']) for i in qry_response['status']) == 0:
+                        qry_response['status'].append({'Status': 'BREAK @ COUNT ={}'.format(self.mv_brk_cnt)})
+                        print('ABORTING MOVE: {} STATUSES RECEIVED WITHOUT FILE MOVEMENT'.format(self.mv_brk_cnt))
+                        break
 
             cnt += 1
         print(qry_response['status'])

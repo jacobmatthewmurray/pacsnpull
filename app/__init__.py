@@ -3,16 +3,11 @@ from flask import Flask, render_template
 
 
 def create_app():
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__)
     
-    app.config.from_mapping(
-        SECRET_KEY='dev',
-        UPLOAD_PATH=app.instance_path,)
+    app.config.from_mapping(SECRET_KEY='dev',)
 
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
+    [os.makedirs(os.path.join(app.instance_path, directory), exist_ok=True) for directory in ['dcm', 'log', 'qry']]
 
     @app.route('/', methods=['GET'])
     def index():
