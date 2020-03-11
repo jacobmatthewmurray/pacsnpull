@@ -93,9 +93,10 @@ def toggle_store(configuration):
         log_path_err = get_save_destination(configuration, 'log', 'storescp_err_' + save_time + '.log')
         dcm_path = get_save_destination(configuration, 'dcm', '')
         client_port = str(configuration['client_port'])
+        client_name = str(configuration['client_name']) if configuration['client_name'] != '' else 'STORESCP'
         log_level = configuration['log_level'] if 'log_level' in configuration else 'INFO'
 
-        cmd = 'storescp -su "" -ll ' + log_level + ' -od "' + dcm_path + '" ' + client_port
+        cmd = 'storescp -su "" -ll ' + log_level + ' -aet "' + client_name + '" -od "' + dcm_path + '" ' + client_port
 
         with open(log_path_out, 'a') as out, open(log_path_err, 'a') as err:
             subprocess.Popen(cmd, shell=True, stderr=err, stdout=out)
