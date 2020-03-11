@@ -46,7 +46,7 @@ class Mover(object):
         # Associate ApplicationEntity with PACS
 
         self.assoc = self.ae.associate(self.host_ip, self.host_port)
-        self.currently_associated = self.assoc_check(True)
+        self.currently_associated = self.assoc_check()
 
     def assoc_check(self, print_status=False):
 
@@ -118,7 +118,6 @@ class Mover(object):
                         break
 
             cnt += 1
-        print(qry_response['status'])
         return qry_response
 
     def send_c_echo(self):

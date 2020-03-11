@@ -1,8 +1,14 @@
 import os
+import csv
 import json
 import io
 import subprocess
 import datetime
+import argparse
+import time
+import click
+from itertools import zip_longest
+
 from datetime import datetime
 from flask import (
         Blueprint, flash, g, redirect, render_template, request, session, url_for, jsonify, current_app
@@ -11,12 +17,11 @@ from flask import (
 from app.dicomconnector import Mover
 from app.forms import ConfigurationForm
 
-bp = Blueprint('dicomconnect', __name__, url_prefix='/dicomconnect')
+bp = Blueprint('dicomconnect', __name__, url_prefix='/dicomconnect', cli_group=None)
 
 
 @bp.route('/', methods=['GET'])
-def index():
-    return render_template('/dicomconnect/index.html')
+def index(): return render_template('/dicomconnect/index.html')
 
 
 @bp.route('/overview', methods=['GET'])
@@ -182,3 +187,150 @@ def _store_status():
 
 def timestamp():
     return datetime.strftime(datetime.now(), "%Y%m%d%H%M%S")
+
+
+def pacsnpull_json_to_csv(pacsnpull_json):
+    out = []
+    query_id = pacsnpull_json['query_id']
+    query = {}
+    for key in pacsnpull_json['query']:
+        query['query_' + key] = pacsnpull_json['query'][key]
+
+    for i, (j, k) in enumerate(zip_longest(pacsnpull_json['query_response']['status'],
+                                           pacsnpull_json['query_response']['data'], fillvalue={})):
+        query_responses = {**j, **k}
+        query_responses_new = {}
+        for key in query_responses:
+            query_responses_new['query_response_'+key] = query_responses[key]
+        out.append({'query_id': query_id, **query, 'query_response_id': i, **query_responses_new})
+
+    return out
+
+
+def save_csv_response(list_of_dicts, destination_file):
+    global current_query_status
+    query_count = current_query_status[1]
+
+    with open(destination_file, 'a') as file:
+        dict_writer = csv.DictWriter(file, list_of_dicts[0].keys())
+        if query_count == 0:
+            dict_writer.writeheader()
+        dict_writer.writerows(list_of_dicts)
+
+
+def store_status():
+    process = subprocess.run(['pidof', 'storescp'], capture_output=True, text=True)
+    return process.stdout.strip('\n')
+
+
+def toggle_store(configuration):
+    pid = store_status()
+    if pid:
+        subprocess.run(['kill',  pid])
+    else:
+        log_path = configuration['log_path']
+        dcm_path = configuration['dcm_path']
+        client_port = str(configuration['client_port'])
+        log_level = configuration['log_level'] if 'log_level' in configuration else 'INFO'
+        log_file = os.path.join(log_path, 'storescp_{}_' + timestamp() + '.log')
+
+        cmd = 'storescp -su "" -ll ' + log_level + ' -od "' + dcm_path + '" ' + client_port
+
+        with open(log_file.format('out'), 'a') as out, open(log_file.format('err'), 'a') as err:
+            subprocess.Popen(cmd, shell=True, stderr=err, stdout=out)
+
+
+def echo(configuration):
+    connector = Mover(configuration)
+    response = connector.send_c_echo()
+    connector.assoc.release()
+    return response
+
+
+def query(configuration, queries, query_type):
+    valid_query_type = ['find', 'move']
+    assert query_type in valid_query_type, ValueError('query type must be in {}'.format(valid_query_type))
+
+    global current_query_status
+    start_time = datetime.now()
+    current_query_status = (query_type, 0, len(queries), start_time, datetime.now(), 0)
+    destination_file = os.path.join(configuration['qry_path'], query_type + '_' + timestamp() + '.csv')
+
+    for i, q in enumerate(queries):
+        connector = Mover(configuration)
+        if query_type == 'find':
+            responses = connector.send_c_find(q)
+        elif query_type == 'move':
+            responses = connector.send_c_move(q)
+        else:
+            responses = {}
+        connector.assoc.release()
+        csv_response = pacsnpull_json_to_csv({'query_id': i, 'query': q, 'query_response': responses})
+        save_csv_response(csv_response, destination_file)
+
+        current_query_status = (query_type, i+1, len(queries), start_time, datetime.now(),
+                                datetime.now() - current_query_status[4])
+
+        print_query_status()
+
+
+def print_query_status():
+    global current_query_status
+    query_type, current_query, total_queries, start, current_time, diff_to_last = current_query_status
+    print_string = f"""
+    {'*'*80}
+    # CURRENT QUERY STATUS
+    # {'-'*78}
+    # Query type: {query_type}
+    # Current query count: {current_query}
+    # Total query count: {total_queries}
+    # Percent complete: {(current_query)/total_queries * 100}%
+    # Start time: {start}
+    # Current time: {current_time}
+    # Time of last query {diff_to_last}
+    {'*'*80}
+    """
+    print(print_string)
+
+
+global current_query_status
+
+
+def json_load(path):
+    with open(path) as file:
+        data = json.load(file)
+    return data
+
+
+@bp.cli.command('echo')
+@click.argument('configuration_file_path', type=click.Path(exists=True))
+def click_echo(configuration_file_path):
+    print(echo(json_load(configuration_file_path)))
+
+
+@bp.cli.command('find')
+@click.argument('configuration_file_path', type=click.Path(exists=True))
+@click.argument('query_file_path', type=click.Path(exists=True))
+def click_find(configuration_file_path, query_file_path):
+    configuration = json_load(configuration_file_path)
+    queries = json_load(query_file_path)
+    query(configuration, queries, 'find')
+
+
+@bp.cli.command('move')
+@click.argument('configuration_file_path', type=click.Path(exists=True))
+@click.argument('query_file_path', type=click.Path(exists=True))
+@click.option('--store/--no-store', default=True)
+@click.option('--storelife', default=10)
+def click_find(configuration_file_path, query_file_path, store, storelife):
+    configuration = json_load(configuration_file_path)
+    queries = json_load(query_file_path)
+    if store:
+        toggle_store(configuration)
+        query(configuration, queries, 'move')
+        time.sleep(storelife)
+        toggle_store(configuration)
+    else:
+        query(configuration, queries, 'move')
+
+
