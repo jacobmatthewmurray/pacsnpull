@@ -12,6 +12,7 @@ from flask import (Blueprint, render_template, request, session, jsonify, curren
 from app.dicomconnector import Mover
 from app.forms import ConfigurationForm
 
+from urllib import parse
 
 bp = Blueprint('dicomconnect', __name__, url_prefix='/dicomconnect', cli_group=None)
 
@@ -116,8 +117,8 @@ def _save_json():
 
 @bp.route('/_echo', methods=['GET'])
 def _echo():
-    connector = Mover(session['configuration'])
-    response = connector.send_c_echo()
+    configuration = decode_configuration(request.args)
+    response = echo(configuration)
     return 'Status Code: {}, Status Category: {}'.format(response['status']['code'], response['status']['category'])
 
 
@@ -175,6 +176,12 @@ def _store_status():
             storage_status = True
     return {'store_status': storage_status}
 
+
+def decode_configuration(configuration_multidict):
+    configuration = {}
+    for key in request.args:
+        configuration[key] = configuration_multidict[key] if 'port' not in key else int(configuration_multidict[key])
+    return configuration
 
 def timestamp():
     return datetime.strftime(datetime.now(), "%Y%m%d%H%M%S")

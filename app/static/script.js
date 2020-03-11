@@ -36,8 +36,8 @@ $(document).ready(function(){
         e.preventDefault();
     });
 
-    $('#echo_button').click(function (response) {
-        $.get('/dicomconnect/_echo', function (response) {
+    $('#echo_button').click(function () {
+        $.get('/dicomconnect/_echo', configuration, function (response) {
             alert(response);
         });
     });
