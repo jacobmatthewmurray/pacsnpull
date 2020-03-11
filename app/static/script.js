@@ -2,6 +2,7 @@
 
 let query_results = {};
 let configuration = {};
+let query_file = {};
 
 $(document).ready(function(){
 
@@ -14,41 +15,40 @@ $(document).ready(function(){
      });
 
     $('#upload_form').on('submit', function (e) {
+        e.preventDefault();
         var form = $('#upload_form')[0];
         var formData = new FormData(form);
-        console.log(formData);
         $.ajax({
             type: 'post',
-            url: '/dicomconnect/_query',
+            url: '/dicomconnect/_query_load',
             data: formData,
-            contentType: false, // NEEDED, DON'T OMIT THIS (requires jQuery 1.6+)
-            processData: false, // NEEDED, DON'T OMIT THIS
+            contentType: false,
+            processData: false,
             success: function (q) {
                 $("#query_preview").empty();
                 $.each(q, function (key, val) {
                     tabulate(val, "#query_preview");
                 })
-                query_results['query'] = q;
-                console.log(memorySizeOf(q));
+                query_file = q;
             }
         });
-        e.preventDefault();
     });
 
-    $('#echo_button').click(function () {
+    $('#echo_button').on('click', function () {
         $.get('/dicomconnect/_echo', configuration, function (response) {
             alert(response);
         });
     });
 
-    $('#find_button').click(function () {
+    $('#find_button').on('click', function () {
         $("#find_progress").val(0)
         query_results['find'] = run_query('find');
     });
 
     $('#find_download').on('click', function () {
-        _save_json('find');
-    })
+        let filename = 'find_' + $.now().toString();
+        _save_json(query_results['find'], filename);
+    });
 
     $('#move_button').on('click', function () {
         $.get('/dicomconnect/_store_status', function (data) {
@@ -62,26 +62,21 @@ $(document).ready(function(){
     });
 
     $('#move_download').on('click', function () {
-        _save_json('move');
-    })
+        let filename = 'move_' + $.now().toString();
+        _save_json(query_results['move'], filename);
+    });
 
     $('#store_button').on('click', function () {
-        $.get('/dicomconnect/_store', function (data) {
+        $.get('/dicomconnect/_store', configuration,function (data) {
             set_store_status(data['store_status'], '#store_button')
         });
     });
 
-    $(".overview-item-header").click(function () {
-
+    $(".overview-item-header").on('click', function () {
         $symbol = $(".expand-symbol", this);
-
         $content = $(this).next();
-        //open up the content needed - toggle the slide- if visible, slide up, if not slidedown.
         $content.slideToggle(500, function () {
-            //execute this after slideToggle is done
-            //change text of header based on visibility of content div
             $symbol.text(function () {
-                //change text based on condition
                 return $content.is(":visible") ? "\u002D" : "\u002B";
             });
     });
@@ -101,34 +96,29 @@ $(document).ready(function(){
             $.each(move_qry, function (key, val) {
                 tabulate(val, "#query_preview");
             });
-            $.ajax({
-                type: 'post',
-                url: '/dicomconnect/_query',
-                contentType: 'application/json',
-                data: JSON.stringify(move_qry)
-            });
-            query_results['query'] = move_qry;
-            console.log(memorySizeOf(move_qry));
-        }
-    })
-
+            query_file = move_qry;
+            let filename = 'find_2_move_' + $.now().toString();
+            _save_json(query_file, filename);
+            alert('The converted query has been added as the current query. Move can now be executed.');
+        };
+    });
 });
 
 
 function find_to_move(list_of_dicts){
     let move_qry = [];
-    console.log(list_of_dicts[0]['query_response']['data']);
     if ('StudyInstanceUID' in list_of_dicts[0]['query_response']['data'][0] || 'SeriesInstanceUID' in list_of_dicts[0]['query_response']['data'][0]){
         $.each(list_of_dicts, function (key, val) {
             $.each(val['query_response']['data'], function (i, v) {
                 if ('StudyInstanceUID' in v) {
-                   move_qry.push({'StudyInstanceUID': v['StudyInstanceUID']})
+                    move_qry.push({'StudyInstanceUID': v['StudyInstanceUID']})
                 } else {
                     move_qry.push({'SeriesInstanceUID': v['SeriesInstanceUID']})
                 }
             })
 
         })
+
     } else {
         alert('autocoversion utility not successful');
     }
@@ -166,91 +156,80 @@ function make_config_table(data, reference, target) {
 }
 
 
-function _save_json(query_type) {
-    if (!query_type in query_results) {
-        alert('No results for query type: ' + query_type);
-    } else {
-        let filename = query_type + '_' + String($.now());
+function _save_json(json_object, filename) {
         $.ajax({
             type: 'post',
             url: '/dicomconnect/_save_json',
             contentType: 'application/json',
-            data: JSON.stringify(query_results[query_type]),
-            success: function (q) {
-                alert(q)
+            data: JSON.stringify(json_object),
+            success: function () {
+                alert('Successfully saved as ' + filename + '.json')
             },
             headers: {
                 'filename': filename
             }
         });
-    }
 }
 
 function run_query(query_type){
+    let query_results = [];
+    let queries = query_file;
+    let total_queries = queries.length;
 
     let query_types = ['find', 'move'];
-    let query_results = [];
-    console.assert(query_types.includes(query_type), {query_type: query_type, error: 'non valid query type'} )
+    console.assert(query_types.includes(query_type), {query_type: query_type, error: 'non valid query type'});
 
-    $.getJSON('/dicomconnect/_query', function (queries) {
-        var query_length = queries.length;
-        var i = 0;
-        var start_time = $.now().toString()
 
-        $("#" + query_type + "_progress").attr('max', query_length);
-        run_next_query();
+    let i = 0;
+    let start_time = $.now().toString();
+    $("#" + query_type + "_progress").attr('max', total_queries);
 
-        function run_next_query() {
-            var query_response;
+    run_next_query();
 
-            if(!queries[i]) {
-                return
-            }
-
-            let cqs = {
-                'query_type': query_type,
-                'total_queries': query_length,
-                'start_time': datetime.now(),
-                'current_time': datetime.now(),
-                'diff_to_last': 0,
-                'filename': query_type + '_' + start_time
-            };
-
-            let query_to_send = {
-                "query": queries[i],
-                "configuration": configuration,
-                "cqs": cqs
-            }
-
-            $.ajax({
-                type: 'post',
-                url: '/dicomconnect/_' + query_type,
-                contentType: 'application/json',
-                data: JSON.stringify(query_to_send),
-                success: function (data) {
-                    query_response = data;
-                }
-            }).done(function () {
-                // query_results.push({
-                //     "query_id": i,
-                //     "query": queries[i],
-                //     "query_response": query_response
-                // });
-
-                $.each(query_response, function (key, val) {
-                    $.each(val, function (i, data_element) {
-                        tabulate(data_element, "#" + query_type + "_" + key );
-                    });
-                });
-
-                i++;
-
-                $("#" + query_type + "_progress").val(i)
-
-                run_next_query();
-            })
+    function run_next_query() {
+        let query_response;
+        if(!queries[i]) {
+            return
         }
-    })
+        let cqs = {
+            'query_type': query_type,
+            'current_query': i,
+            'total_queries': total_queries,
+            'start_time': start_time,
+            'current_time': $.now(),
+            'diff_to_last': 0,
+            'filename': query_type + '_' + start_time
+        };
+        let query_to_send = {
+            "query": [queries[i]],
+            "configuration": configuration,
+            "cqs": cqs
+        };
+
+        $.ajax({
+            type: 'post',
+            url: '/dicomconnect/_query',
+            contentType: 'application/json',
+            data: JSON.stringify(query_to_send),
+            success: function (data) {
+                query_response = data[0];
+            }
+        }).done(function () {
+            query_results.push({
+                "query_id": i,
+                "query": queries[i],
+                "query_response": query_response
+            });
+            $.each(query_response, function (key, val) {
+                $.each(val, function (i, data_element) {
+                    tabulate(data_element, "#" + query_type + "_" + key );
+                });
+            });
+            i++;
+            $("#" + query_type + "_progress").val(i)
+            run_next_query();
+        });
+    };
     return query_results;
 };
 
