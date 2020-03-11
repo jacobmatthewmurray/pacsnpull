@@ -6,8 +6,7 @@ def create_app():
     app = Flask(__name__)
 
     app.config.from_mapping(SECRET_KEY='dev',)
-
-    [os.makedirs(os.path.join(app.instance_path, directory), exist_ok=True) for directory in ['dcm', 'log', 'qry']]
+    os.makedirs(app.instance_path, exist_ok=True)
 
     @app.route('/', methods=['GET'])
     def index():

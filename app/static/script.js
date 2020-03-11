@@ -47,7 +47,7 @@ $(document).ready(function(){
 
     $('#find_download').on('click', function () {
         let filename = 'find_' + $.now().toString();
-        _save_json(query_results['find'], filename);
+        save_json(query_results['find'], 'qry', filename);
     });
 
     $('#move_button').on('click', function () {
@@ -63,7 +63,7 @@ $(document).ready(function(){
 
     $('#move_download').on('click', function () {
         let filename = 'move_' + $.now().toString();
-        _save_json(query_results['move'], filename);
+        save_json(query_results['move'], 'qry', filename);
     });
 
     $('#store_button').on('click', function () {
@@ -98,12 +98,11 @@ $(document).ready(function(){
             });
             query_file = move_qry;
             let filename = 'find_2_move_' + $.now().toString();
-            _save_json(query_file, filename);
+            save_json(query_file, 'qry', filename);
             alert('The converted query has been added as the current query. Move can now be executed.');
         };
     });
 });
-
 
 function find_to_move(list_of_dicts){
     let move_qry = [];
@@ -125,8 +124,6 @@ function find_to_move(list_of_dicts){
     return move_qry;
 }
 
-
-
 function set_store_status(data, target){
     let store_status_msg = '';
     if (data) {
@@ -136,7 +133,6 @@ function set_store_status(data, target){
     }
     $(target).text(store_status_msg);
 }
-
 
 function make_config_table(data, reference, target) {
     let html_string = '<table>';
@@ -155,18 +151,22 @@ function make_config_table(data, reference, target) {
     $(target).html(html_string);
 }
 
+function save_json(json_object, parents, filename) {
 
-function _save_json(json_object, filename) {
+        let data = {
+            "configuration": configuration,
+            "json_data": json_object,
+            "parents": parents,
+            "filename": filename + '.json'
+        };
+
         $.ajax({
             type: 'post',
             url: '/dicomconnect/_save_json',
             contentType: 'application/json',
-            data: JSON.stringify(json_object),
+            data: JSON.stringify(data),
             success: function () {
                 alert('Successfully saved as ' + filename + '.json')
-            },
-            headers: {
-                'filename': filename
             }
         });
 }
@@ -260,8 +260,6 @@ function tabulate(single_dict, output_location){
 
 }
 
-
-
 function getFormData($form){
     var unindexed_array = $form.serializeArray();
     var indexed_array = {};
@@ -272,53 +270,3 @@ function getFormData($form){
 
     return indexed_array;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-function memorySizeOf(obj) {
-    var bytes = 0;
-
-    function sizeOf(obj) {
-        if(obj !== null && obj !== undefined) {
-            switch(typeof obj) {
-            case 'number':
-                bytes += 8;
-                break;
-            case 'string':
-                bytes += obj.length * 2;
-                break;
-            case 'boolean':
-                bytes += 4;
-                break;
-            case 'object':
-                var objClass = Object.prototype.toString.call(obj).slice(8, -1);
-                if(objClass === 'Object' || objClass === 'Array') {
-                    for(var key in obj) {
-                        if(!obj.hasOwnProperty(key)) continue;
-                        sizeOf(obj[key]);
-                    }
-                } else bytes += obj.toString().length * 2;
-                break;
-            }
-        }
-        return bytes;
-    };
-
-    function formatByteSize(bytes) {
-        if(bytes < 1024) return bytes + " bytes";
-        else if(bytes < 1048576) return(bytes / 1024).toFixed(3) + " KiB";
-        else if(bytes < 1073741824) return(bytes / 1048576).toFixed(3) + " MiB";
-        else return(bytes / 1073741824).toFixed(3) + " GiB";
-    };
-
-    return formatByteSize(sizeOf(obj));
-};

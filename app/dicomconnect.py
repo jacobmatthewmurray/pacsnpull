@@ -37,13 +37,17 @@ def _query_load():
 
 @bp.route('/_save_json', methods=['POST'])
 def _save_json():
-    if 'filename' not in request.headers:
-        return 'error: no filename provided'
 
-    filename = request.headers['filename']
+    data = request.get_json()
+    configuration = data['configuration']
+    json_data = data['json_data']
+    parents = data['parents']
+    filename = data['filename']
 
-    with open(os.path.join(current_app.instance_path, 'qry', filename + '.json'), 'w') as json_file:
-        json.dump(request.json, json_file)
+    save_destination = get_save_destination(configuration, parents, filename)
+
+    with open(save_destination, 'w') as json_file:
+        json.dump(json_data, json_file)
 
     return Response(status=200)
 
@@ -84,15 +88,16 @@ def toggle_store(configuration):
     if pid:
         subprocess.run(['kill',  pid])
     else:
-        log_path = os.path.join(current_app.instance_path, 'log')
-        dcm_path = os.path.join(current_app.instance_path, 'dcm')
+        save_time = timestamp()
+        log_path_out = get_save_destination(configuration, 'log', 'storescp_out_' + save_time + '.log')
+        log_path_err = get_save_destination(configuration, 'log', 'storescp_err_' + save_time + '.log')
+        dcm_path = get_save_destination(configuration, 'dcm', '')
         client_port = str(configuration['client_port'])
         log_level = configuration['log_level'] if 'log_level' in configuration else 'INFO'
-        log_file = os.path.join(log_path, 'storescp_{}_' + timestamp() + '.log')
 
         cmd = 'storescp -su "" -ll ' + log_level + ' -od "' + dcm_path + '" ' + client_port
 
-        with open(log_file.format('out'), 'a') as out, open(log_file.format('err'), 'a') as err:
+        with open(log_path_out, 'a') as out, open(log_path_err, 'a') as err:
             subprocess.Popen(cmd, shell=True, stderr=err, stdout=out)
 
 
@@ -125,7 +130,8 @@ def query(configuration, queries, query_type, cqs=None):
         }
 
     cqs['current_time'] = datetime.now()
-    destination_file = os.path.join(current_app.instance_path, 'qry', cqs['filename'] + '.csv')
+
+    destination_file = get_save_destination(configuration, 'qry', cqs['filename'] + '.csv')
 
     responses_to_return = []
 
@@ -158,6 +164,8 @@ def query(configuration, queries, query_type, cqs=None):
 
 
 # Helper functions
+
+
 def print_query_status(cqs):
 
     print_string = f"""
@@ -196,6 +204,14 @@ def decode_configuration(configuration_multidict):
 
 def timestamp():
     return datetime.strftime(datetime.now(), "%Y%m%d%H%M%S")
+
+
+def get_save_destination(configurations, parent_directories, filename):
+    destination_directory = os.path.join(current_app.instance_path,
+                                         configurations['job_title'],
+                                         parent_directories)
+    os.makedirs(destination_directory, exist_ok=True)
+    return os.path.join(destination_directory, filename)
 
 
 def save_csv_response(list_of_dicts, destination_file, cqs):

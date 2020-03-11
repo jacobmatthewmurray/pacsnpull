@@ -4,6 +4,7 @@ from wtforms.validators import DataRequired
 
 
 class ConfigurationForm(FlaskForm):
+    job_title = StringField('job title', default='my new job')
     host_ip = StringField('host ip', default='127.0.0.1')
     host_port = IntegerField('host port', default=4242)
     client_name = StringField('client name', default='STORESCP')

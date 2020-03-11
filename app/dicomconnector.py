@@ -146,38 +146,27 @@ class Mover(object):
 
 
 if __name__ == '__main__':
+
+    # Sample find request directly to the Mover class for testing.
+
     configuration = {
-            'host_ip': '127.0.0.1',
-            'host_port': 4242,
-            'client_name': 'STORESCP',
-            'client_ip': '',
-            'client_port': 2000,
-            "query_model": 'S',
-            "query_break_count": 10
+        'host_ip': '127.0.0.1',
+        'host_port': 4242,
+        'client_name': 'STORESCP',
+        'client_ip': '',
+        'client_port': 2000,
+        "query_model": 'S',
+        "query_break_count": 10
     }
 
     qry = {
         'QueryRetrieveLevel': 'STUDY',
         'StudyInstanceUID': '1.2.840.113619.6.95.31.0.3.4.1.6013.13.6073688'
-        # 'PatientName': '7ec8709f2db4e39ea050caf734b6a102ef2280d664d9139c565cefeb'
-        # 'SeriesDescription': '*',
-        # 'StudyDescription': '*',
-        # 'StudyDate': '20140601-',
-        # 'Modality': '*',
-        # 'StudyID': '*',
-        # 'AccessionNumber': '*',
-        # 'PatientBirthDate': '*'
     }
 
     m = Mover(configuration)
-    a = m.send_c_move(qry)
+    a = m.send_c_find(qry)
     m.assoc.release()
-
-    # m = Mover(configuration)
-    # m.send_c_echo()
-
-    # m = Mover(configuration)
-    # a = m.send_c_find(qry)
-    # print(a)
+    print(a)
 
 
