@@ -3,7 +3,6 @@
 let query_results = {};
 let configuration = {};
 
-
 $(document).ready(function(){
 
     $('#config_form').on('submit',function (e) {
@@ -196,6 +195,7 @@ function run_query(query_type){
     $.getJSON('/dicomconnect/_query', function (queries) {
         var query_length = queries.length;
         var i = 0;
+        var start_time = $.now().toString()
 
         $("#" + query_type + "_progress").attr('max', query_length);
         run_next_query();
@@ -205,21 +205,27 @@ function run_query(query_type){
             if(!queries[i]) {
                 return
             }
+            let query_to_send = {
+                "query": queries[i],
+                "configuration": configuration,
+                "current_query_status": [query_type, i, query_length, start_time, 0, 0],
+                "destination_file": 'find_' + start_time + '.csv'
+            }
+
             $.ajax({
                 type: 'post',
                 url: '/dicomconnect/_' + query_type,
                 contentType: 'application/json',
-                // async: false,
-                data: JSON.stringify(queries[i]),
+                data: JSON.stringify(query_to_send),
                 success: function (data) {
                     query_response = data;
                 }
             }).done(function () {
-                query_results.push({
-                    "query_id": i,
-                    "query": queries[i],
-                    "query_response": query_response
-                });
+                // query_results.push({
+                //     "query_id": i,
+                //     "query": queries[i],
+                //     "query_response": query_response
+                // });
 
                 $.each(query_response, function (key, val) {
                     $.each(val, function (i, data_element) {

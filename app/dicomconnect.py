@@ -124,12 +124,36 @@ def _echo():
 
 @bp.route('/_find', methods=['POST'])
 def _find():
-    assert 'configuration' in session
-    qry = request.get_json()
-    connector = Mover(session['configuration'])
-    responses_dict = connector.send_c_find(qry)
+    global current_query_status
+
+    query_data = request.get_json()
+
+    configuration = decode_configuration(query_data['configuration'])
+    query = query_data['query']
+    destination_file = os.path.join(current_app.instance_path, 'qry', query_data['destination_file'])
+    current_query_status = query_data['current_query_status']
+    current_query_status[4] = datetime.now()
+    current_query_status[5] = 0
+
+    print(current_query_status)
+
+    connector = Mover(configuration)
+    responses = connector.send_c_find(query)
     connector.assoc.release()
-    return jsonify(responses_dict)
+
+    csv_response = pacsnpull_json_to_csv({'query_id': current_query_status[1],
+                                          'query': query,
+                                          'query_response': responses})
+
+    save_csv_response(csv_response, destination_file)
+
+    current_query_status[1] = current_query_status[1] + 1
+    current_query_status[4] = datetime.now()
+    current_query_status[5] = datetime.now() - current_query_status[4]
+
+    print_query_status()
+
+    return jsonify(responses)
 
 
 @bp.route('/_move', methods=['POST'])
@@ -179,7 +203,7 @@ def _store_status():
 
 def decode_configuration(configuration_multidict):
     configuration = {}
-    for key in request.args:
+    for key in configuration_multidict:
         configuration[key] = configuration_multidict[key] if 'port' not in key else int(configuration_multidict[key])
     return configuration
 
@@ -246,6 +270,9 @@ def echo(configuration):
 
 
 def query(configuration, queries, query_type):
+
+    # check validity of inputs
+    
     valid_query_type = ['find', 'move']
     assert query_type in valid_query_type, ValueError('query type must be in {}'.format(valid_query_type))
 
