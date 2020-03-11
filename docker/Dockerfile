@@ -13,5 +13,3 @@ RUN export FLASK_ENV=production
 
 COPY ./app /pacsnpull/app
 
-CMD ["flask", "run", "--host", "0.0.0.0"]
-

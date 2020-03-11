@@ -243,27 +243,27 @@ def pacsnpull_json_to_csv(pacsnpull_json):
 
 # Command line functions
 @bp.cli.command('echo')
-@click.argument('configuration_file_path', type=click.Path(exists=True))
-def click_echo(configuration_file_path):
+def click_echo():
+    configuration_file_path = os.path.join(current_app.instance_path, 'cli', 'conf.json')
     print(echo(json_load(configuration_file_path)))
 
 
 @bp.cli.command('find')
-@click.argument('configuration_file_path', type=click.Path(exists=True))
-@click.argument('query_file_path', type=click.Path(exists=True))
-def click_find(configuration_file_path, query_file_path):
+def click_find():
+    configuration_file_path = os.path.join(current_app.instance_path, 'cli', 'conf.json')
     configuration = json_load(configuration_file_path)
+    query_file_path = os.path.join(current_app.instance_path, 'cli', 'find.json')
     queries = json_load(query_file_path)
     query(configuration, queries, 'find')
 
 
 @bp.cli.command('move')
-@click.argument('configuration_file_path', type=click.Path(exists=True))
-@click.argument('query_file_path', type=click.Path(exists=True))
 @click.option('--store/--no-store', default=True)
 @click.option('--storelife', default=10)
-def click_find(configuration_file_path, query_file_path, store, storelife):
+def click_find(store, storelife):
+    configuration_file_path = os.path.join(current_app.instance_path, 'cli', 'conf.json')
     configuration = json_load(configuration_file_path)
+    query_file_path = os.path.join(current_app.instance_path, 'cli', 'move.json')
     queries = json_load(query_file_path)
     if store:
         toggle_store(configuration)
