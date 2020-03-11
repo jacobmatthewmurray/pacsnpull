@@ -202,14 +202,24 @@ function run_query(query_type){
 
         function run_next_query() {
             var query_response;
+
             if(!queries[i]) {
                 return
             }
+
+            let cqs = {
+                'query_type': query_type,
+                'total_queries': query_length,
+                'start_time': datetime.now(),
+                'current_time': datetime.now(),
+                'diff_to_last': 0,
+                'filename': query_type + '_' + start_time
+            };
+
             let query_to_send = {
                 "query": queries[i],
                 "configuration": configuration,
-                "current_query_status": [query_type, i, query_length, start_time, 0, 0],
-                "destination_file": 'find_' + start_time + '.csv'
+                "cqs": cqs
             }
 
             $.ajax({

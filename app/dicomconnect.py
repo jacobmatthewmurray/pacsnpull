@@ -124,34 +124,15 @@ def _echo():
 
 @bp.route('/_find', methods=['POST'])
 def _find():
-    global current_query_status
 
     query_data = request.get_json()
 
     configuration = decode_configuration(query_data['configuration'])
-    query = query_data['query']
-    destination_file = os.path.join(current_app.instance_path, 'qry', query_data['destination_file'])
-    current_query_status = query_data['current_query_status']
-    current_query_status[4] = datetime.now()
-    current_query_status[5] = 0
+    queries = query_data['query']
+    query_type = 'find'
+    cqs = query_data['cqs']
 
-    print(current_query_status)
-
-    connector = Mover(configuration)
-    responses = connector.send_c_find(query)
-    connector.assoc.release()
-
-    csv_response = pacsnpull_json_to_csv({'query_id': current_query_status[1],
-                                          'query': query,
-                                          'query_response': responses})
-
-    save_csv_response(csv_response, destination_file)
-
-    current_query_status[1] = current_query_status[1] + 1
-    current_query_status[4] = datetime.now()
-    current_query_status[5] = datetime.now() - current_query_status[4]
-
-    print_query_status()
+    responses = query(configuration, queries, query_type, cqs)
 
     return jsonify(responses)
 
@@ -269,19 +250,28 @@ def echo(configuration):
     return response
 
 
-def query(configuration, queries, query_type):
+def query(configuration, queries, query_type, cqs=None):
 
     # check validity of inputs
-    
     valid_query_type = ['find', 'move']
     assert query_type in valid_query_type, ValueError('query type must be in {}'.format(valid_query_type))
 
-    global current_query_status
-    start_time = datetime.now()
-    current_query_status = (query_type, 0, len(queries), start_time, datetime.now(), 0)
-    destination_file = os.path.join(configuration['qry_path'], query_type + '_' + timestamp() + '.csv')
+    if not cqs:
+        cqs = {
+            'query_type': query_type,
+            'current_query': 0,
+            'total_queries': len(queries),
+            'start_time': datetime.now(),
+            'current_time': datetime.now(),
+            'diff_to_last': 0,
+            'filename': query_type + '_' + timestamp()
+        }
 
-    for i, q in enumerate(queries):
+    destination_file = os.path.join(current_app.instance_path, 'qry', cqs['filename'] + '.csv')
+
+    responses_to_return = []
+
+    for q in queries:
         connector = Mover(configuration)
         if query_type == 'find':
             responses = connector.send_c_find(q)
@@ -290,29 +280,37 @@ def query(configuration, queries, query_type):
         else:
             responses = {}
         connector.assoc.release()
-        csv_response = pacsnpull_json_to_csv({'query_id': i, 'query': q, 'query_response': responses})
+
+        # append to responses
+        responses_to_return.append(responses)
+
+        # save to csv
+        augmented_query_response = {'query_id': cqs['current_query'], 'query': q, 'query_response': responses}
+        csv_response = pacsnpull_json_to_csv(augmented_query_response)
         save_csv_response(csv_response, destination_file)
 
-        current_query_status = (query_type, i+1, len(queries), start_time, datetime.now(),
-                                datetime.now() - current_query_status[4])
+        # update status
+        cqs['current_query'] = cqs['current_query'] + 1
+        cqs['diff_to_last'] = datetime.now() - cqs['current_time']
+        cqs['current_time'] = datetime.now()
 
-        print_query_status()
+        print_query_status(cqs)
 
+    return responses_to_return
 
-def print_query_status():
-    global current_query_status
-    query_type, current_query, total_queries, start, current_time, diff_to_last = current_query_status
+def print_query_status(cqs):
+
     print_string = f"""
     {'*'*80}
     # CURRENT QUERY STATUS
     # {'-'*78}
-    # Query type: {query_type}
-    # Current query count: {current_query}
-    # Total query count: {total_queries}
-    # Percent complete: {(current_query)/total_queries * 100}%
-    # Start time: {start}
-    # Current time: {current_time}
-    # Run time of last query: {diff_to_last}
+    # Query type: {cqs['query_type']}
+    # Current query count: {cqs['current_query']}
+    # Total query count: {cqs['total_queries']}
+    # Percent complete: {cqs['current_query']/cqs['current_query'] * 100}%
+    # Start time: {cqs['start_time']}
+    # Current time: {cqs['current_time']}
+    # Run time of last query: {cqs['diff_to_last']}
     {'*'*80}
     """
     print(print_string)
