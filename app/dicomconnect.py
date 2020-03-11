@@ -4,20 +4,18 @@ import json
 import io
 import subprocess
 import datetime
-import argparse
 import time
 import click
 from itertools import zip_longest
-
 from datetime import datetime
-from flask import (
-        Blueprint, flash, g, redirect, render_template, request, session, url_for, jsonify, current_app
-        )
-
+from flask import (Blueprint, render_template, request, session, jsonify, current_app)
 from app.dicomconnector import Mover
 from app.forms import ConfigurationForm
 
+
 bp = Blueprint('dicomconnect', __name__, url_prefix='/dicomconnect', cli_group=None)
+
+global current_query_status
 
 
 @bp.route('/', methods=['GET'])
@@ -110,6 +108,9 @@ def _save_json():
     with open(os.path.join(current_app.instance_path, 'qry', filename + '.json'), 'w') as json_file:
         json.dump(request.json, json_file)
 
+    save_csv_response(pacsnpull_json_to_csv(request.json),
+                      os.path.join(current_app.instance_path, 'qry', filename + '.csv'))
+
     return 'success: json file saved'
 
 
@@ -165,16 +166,6 @@ def _store():
 
     return {'store_status': session['storage_running']}
 
-@bp.route('/_store_stream', methods=['GET'])
-def _store_stream():
-    if 'storage_running' not in session:
-        session['storage_running'] = False
-
-    if session['storage_running']:
-        # return stream from store process here
-        pass
-    else:
-        return jsonify({})
 
 @bp.route('/_store_status', methods=['GET'])
 def _store_status():
@@ -209,7 +200,7 @@ def pacsnpull_json_to_csv(pacsnpull_json):
 
 def save_csv_response(list_of_dicts, destination_file):
     global current_query_status
-    query_count = current_query_status[1]
+    query_count = current_query_status[1] if current_query_status else 0
 
     with open(destination_file, 'a') as file:
         dict_writer = csv.DictWriter(file, list_of_dicts[0].keys())
@@ -287,13 +278,13 @@ def print_query_status():
     # Percent complete: {(current_query)/total_queries * 100}%
     # Start time: {start}
     # Current time: {current_time}
-    # Time of last query {diff_to_last}
+    # Run time of last query: {diff_to_last}
     {'*'*80}
     """
     print(print_string)
 
 
-global current_query_status
+
 
 
 def json_load(path):
