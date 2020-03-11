@@ -1,20 +1,17 @@
 // Client-side variables
 
 let query_results = {};
+let configuration = {};
+
 
 $(document).ready(function(){
 
     $('#config_form').on('submit',function (e) {
-        $.ajax({
-            type: 'post',
-            url: '/dicomconnect/_configuration',
-            data: $('#config_form').serialize(),
-            success: function (data) {
-                let reference = "#config_form label";
-                let target = "#config_form_results_table";
-                make_config_table(data, reference, target);
-            }});
         e.preventDefault();
+        configuration = getFormData($("#config_form"));
+        let reference = "#config_form label";
+        let target = "#config_form_results_table";
+        make_config_table(configuration, reference, target);
      });
 
     $('#upload_form').on('submit', function (e) {
@@ -270,7 +267,16 @@ function tabulate(single_dict, output_location){
 
 
 
+function getFormData($form){
+    var unindexed_array = $form.serializeArray();
+    var indexed_array = {};
 
+    $.map(unindexed_array, function(n, i){
+        indexed_array[n['name']] = n['value'];
+    });
+
+    return indexed_array;
+}
 
 
 

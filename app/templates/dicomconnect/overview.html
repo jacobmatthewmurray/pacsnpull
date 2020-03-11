@@ -18,7 +18,6 @@
                 <div class="overview-item-controls-configuration-item">
                     <div class="overview-item-controls-heading">set configuration values:</div>
                     <form method="post" id="config_form">
-                    {{ config_form.hidden_tag() }}
                     {% for field in config_form if field.name != 'csrf_token' %}
                         <div>
                             {{ field.label() }}
