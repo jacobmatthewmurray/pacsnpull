@@ -42,6 +42,7 @@ $(document).ready(function(){
 
     $('#find_button').on('click', function () {
         $("#find_progress").val(0)
+        $("#find_data, #find_status").empty();
         query_results['find'] = run_query('find');
     });
 
@@ -55,7 +56,8 @@ $(document).ready(function(){
             if (!data['store_status']) {
                 alert('error: store not running, but required for move');
             } else {
-                $("#move_progress").val(0)
+                $("#move_progress").val(0);
+                $("#move_data, #move_status").empty();
                 query_results['move'] = run_query('move');
             }
         });
