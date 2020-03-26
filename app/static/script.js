@@ -69,9 +69,14 @@ $(document).ready(function(){
     });
 
     $('#store_button').on('click', function () {
-        $.get('/dicomconnect/_store', configuration,function (data) {
+        if (Object.keys(configuration).length > 0) {
+            $.get('/dicomconnect/_store', configuration,function (data) {
             set_store_status(data['store_status'], '#store_button')
-        });
+            });
+        } else {
+            alert("Configurations must be set before initiating store.");
+        }
+
     });
 
     $(".overview-item-header").on('click', function () {

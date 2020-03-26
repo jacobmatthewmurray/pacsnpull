@@ -73,6 +73,7 @@ def _query():
 @bp.route('/_store', methods=['GET'])
 def _toggle_store():
     toggle_store(decode_configuration(request.args))
+    time.sleep(0.5)
     storage_status = True if store_status() else False
     return {'store_status': storage_status}
 
@@ -86,7 +87,7 @@ def _store_status():
 def toggle_store(configuration):
     pid = store_status()
     if pid:
-        subprocess.run(['kill',  pid])
+        subprocess.run(['kill', pid.strip()])
     else:
         save_time = timestamp()
         log_path_out = get_save_destination(configuration, 'log', 'storescp_out_' + save_time + '.log')
