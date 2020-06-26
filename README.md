@@ -1,4 +1,4 @@
-![PACSnPULL Title](https://github.com/jacobmatthewmurray/pacsnpull/pacsnpull.png)
+![PACSnPULL Title](https://github.com/jacobmatthewmurray/pacsnpull/blob/master/pacsnpull.png)
 
 # pacs n pull (prototype) 
 
